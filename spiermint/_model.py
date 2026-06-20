@@ -17,25 +17,21 @@ CACHE_DIR_ENV = "SPIERMINT_CACHE_DIR"
 CONFIG_RESOURCE = "esm2_t33_650M_UR50D.json"
 
 
-def cache_dir() -> Path:
-    if value := getenv(CACHE_DIR_ENV):
-        return Path(value).expanduser()
-    if value := getenv("XDG_CACHE_HOME"):
-        return Path(value).expanduser() / "spiermint"
-    return Path.home() / ".cache" / "spiermint"
+def _checkpoint_path() -> Path:
+    if custom_cache := getenv(CACHE_DIR_ENV):
+        return Path(custom_cache).expanduser() / CHECKPOINT_NAME
+
+    cache_root = Path(getenv("XDG_CACHE_HOME") or "~/.cache").expanduser()
+    return cache_root / "spiermint" / CHECKPOINT_NAME
 
 
-def default_checkpoint_path() -> Path:
-    return cache_dir() / CHECKPOINT_NAME
-
-
-def ensure_checkpoint() -> Path:
-    checkpoint = default_checkpoint_path()
+def _ensure_checkpoint() -> Path:
+    checkpoint = _checkpoint_path()
     if checkpoint.exists():
         return checkpoint
 
     checkpoint.parent.mkdir(parents=True, exist_ok=True)
-    temporary = checkpoint.with_suffix(f"{checkpoint.suffix}.tmp")
+    temporary = checkpoint.with_name(f"{checkpoint.name}.tmp")
     request = Request(CHECKPOINT_URL, headers={"User-Agent": "spiermint"})
     with urlopen(request) as response, temporary.open("wb") as handle:
         copyfileobj(response, handle)
@@ -43,16 +39,14 @@ def ensure_checkpoint() -> Path:
     return checkpoint
 
 
-def load_config() -> dict:
+def _load_config() -> dict:
     resource = resources.files("spiermint.data").joinpath(CONFIG_RESOURCE)
-    with resources.as_file(resource) as path:
-        with open(path) as handle:
-            return json.load(handle)
+    return json.loads(resource.read_text())
 
 
 def load_model(device: torch.device):
-    config = load_config()
-    checkpoint = ensure_checkpoint()
+    config = _load_config()
+    checkpoint = _ensure_checkpoint()
     model = ESM2(
         num_layers=config["encoder_layers"],
         embed_dim=config["encoder_embed_dim"],
