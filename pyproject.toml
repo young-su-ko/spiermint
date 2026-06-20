@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spiermint"
+version = "0.1.0"
+description = "Scoring Protein IntERactions with MINT"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "torch==2.5.1",
+    "typer>=0.12",
+]
+
+[project.scripts]
+spiermint = "spiermint.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["spiermint", "spiermint.*"]
+
+[tool.setuptools.package-data]
+spiermint = ["data/*.json"]

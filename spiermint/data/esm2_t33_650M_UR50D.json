@@ -1,0 +1,6 @@
+{
+  "encoder_layers": 33,
+  "encoder_embed_dim": 1280,
+  "encoder_attention_heads": 20,
+  "token_dropout": true
+}
